@@ -11,7 +11,13 @@ function argPositionName(i) {
   return POSITION_NAME[position] || (position + 'th');
 }
 
-var primitives = $traceurRuntime.type;
+var primitive = {
+    void: function voidType() { },
+    any: function any() { return true },
+    string: function string() { },
+    number: function number() { },
+    boolean: function boolean() { }
+};
 
 function assertArgumentTypes(...params) {
   var actual, type;
@@ -75,23 +81,23 @@ function prettyPrint(value) {
 
 function isType(value, T, errors) {
 
-  if (T === primitives.void) {
+  if (T === primitive.void) {
     return typeof value === 'undefined';
   }
 
-  if (T === primitives.any || value === null) {
+  if (T === primitive.any || value === null) {
     return true;
   }
 
-  if (T === primitives.string) {
+  if (T === primitive.string) {
     return typeof value === 'string';
   }
 
-  if (T === primitives.number) {
+  if (T === primitive.number) {
     return typeof value === 'number';
   }
 
-  if (T === primitives.boolean) {
+  if (T === primitive.boolean) {
     return typeof value === 'boolean';
   }
 
@@ -222,10 +228,10 @@ function arrayOf(...types) {
 
 function structure(definition) {
   var properties = Object.keys(definition);
-  return assert.define('object with properties ' + properties.join(', '), function(value) {
+  return assert.define('object with properties ' + properties.map(x => `"${x}"`).join(', '), function(value) {
     if (assert(value).is(Object)) {
       for (var property of properties) {
-        assert(value[property]).is(definition[property]);
+        assert(value[property], property).is(definition[property]);
       }
     }
   })
@@ -266,7 +272,12 @@ function define(classOrName, check) {
 
 
 
-function assert(value) {
+function assert(value, name = '') {
+  var errorPrefix = '';
+  if (name != '') { 
+    errorPrefix = `\`${name}\`: `;
+  }
+      
   return {
     is: function is(...types) {
       // var errors = []
@@ -281,7 +292,7 @@ function assert(value) {
         }
 
         // if no errors, merge multiple "is not instance of " into x/y/z ?
-        allErrors.push(prettyPrint(value) + ' is not instance of ' + prettyPrint(type))
+        allErrors.push(`${errorPrefix}${prettyPrint(value)} is not instance of \`${prettyPrint(type)}\``)
         if (errors.length) {
           allErrors.push(errors);
         }
@@ -300,7 +311,38 @@ function assert(value) {
 
 // PUBLIC API
 
+module assert {
+  // asserting API
+  export var primitive;
+
+  // throw if no type provided
+  export var type;
+
+  // throw if odd number of args
+  export var argumentTypes;
+  export var returnType;
+
+
+  // define AP;
+  export var define;
+  export var fail;
+
+  // primitive value type;
+  export var any;
+  export var string;
+  export var number;
+  export var boolean;
+
+  // custom types
+  export var arrayOf;
+  export var structure;
+}
+
+
+// PUBLIC API
+
 // asserting API
+assert.primitive = primitive;
 
 // throw if no type provided
 assert.type = type;
@@ -315,6 +357,7 @@ assert.define = define;
 assert.fail = fail;
 
 // primitive value type;
+assert.any = primitive.any;
 assert.string = string;
 assert.number = number;
 assert.boolean = boolean;
