@@ -1,6 +1,6 @@
 {
   "name": "rtts-assert",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A simple runtime type assertion library.",
   "main": "./dist/cjs/assert.js",
   "repository": {
